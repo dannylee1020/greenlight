@@ -6,7 +6,10 @@ import (
 )
 
 func (app *application) logError(r *http.Request, err error) {
-	app.logger.Print(err)
+	app.logger.PrintError(err, map[string]string{
+		"request_method": r.Method,
+		"request_url":    r.URL.String(),
+	})
 }
 
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
@@ -48,4 +51,9 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request)
 func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("The %s method is not supported for this resource", r.Method)
 	app.errorResponse(w, r, http.StatusMethodNotAllowed, message)
+}
+
+func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
+	message := "rate limited exceeded"
+	app.errorResponse(w, r, http.StatusTooManyRequests, message)
 }
