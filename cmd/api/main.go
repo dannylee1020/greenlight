@@ -4,11 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"greenlight.daniellee/internal/data"
 	"greenlight.daniellee/internal/jsonlog"
-	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -78,20 +75,10 @@ func main() {
 		models: data.NewModels(db),
 	}
 
-	// Declare a HTTP server with some tiemout settings
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		ErrorLog:     log.New(logger, "", 0),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+	err = app.serve()
+	if err != nil {
+		logger.PrintFatal(err, nil)
 	}
-
-	// Start the HTTP server
-	logger.PrintInfo("starting %s server on %s", map[string]string{"env": cfg.env, "addr": srv.Addr})
-	err = srv.ListenAndServe()
-	logger.PrintFatal(err, nil)
 }
 
 func openDB(cfg config) (*sql.DB, error) {

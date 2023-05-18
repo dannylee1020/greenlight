@@ -21,4 +21,5 @@ func (app *application) routes() http.Handler {
 
 	// wrap the router with middlewares
 	return app.recoverPanic(app.rateLimit(router))
+
 }
