@@ -56,12 +56,16 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	// send email to newly registered user
-	err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+	// send email in a background job
+	// handle panic as recoverPanic middleware isn't going to
+	// work for this goroutine
+
+	app.background(func() {
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		if err != nil {
+			app.logger.PrintError(err, nil)
+		}
+	})
 
 	// write response
 	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
