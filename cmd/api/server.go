@@ -47,6 +47,7 @@ func (app *application) serve() error {
 
 		// wait until all background goroutines have completed
 		app.wg.Wait()
+
 		// call Shutdown on our server, passing context
 		// relay this return value to the shutdownError channel
 		shutdownError <- srv.Shutdown(ctx)
