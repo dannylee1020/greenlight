@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base32"
-	"errors"
 	"time"
 
 	"greenlight.daniellee/internal/validator"
@@ -96,49 +95,4 @@ func (m TokenModel) DeleteAllForUsers(scope string, userID int64) error {
 
 	_, err := m.DB.ExecContext(ctx, query, scope, userID)
 	return err
-}
-
-func (m TokenModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
-
-	// get hash from the plaintext
-	// this returns an array not slice
-	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
-
-	query := `
-		SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.version
-		FROM users u
-		INNER JOIN tokens t
-		ON u.id = t.user_id
-		WHERE t.hash = $1
-		AND t.scope = $2
-		AND t.expiry > $3
-	`
-
-	args := []any{tokenHash[:], tokenScope, time.Now()}
-
-	var user User
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
-		&user.ID,
-		&user.CreatedAt,
-		&user.Name,
-		&user.Email,
-		&user.Password.hash,
-		&user.Activated,
-		&user.Version,
-	)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
-		}
-	}
-
-	return &user, nil
 }
