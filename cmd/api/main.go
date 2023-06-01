@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"greenlight.daniellee/internal/data"
 	"greenlight.daniellee/internal/jsonlog"
@@ -95,6 +96,18 @@ func main() {
 	defer db.Close()
 
 	logger.PrintInfo("database connection pool established", nil)
+
+	// publish new metric to the expvar handler
+	expvar.NewString("version").Set(version)
+
+	// publish the database connection pool statistics
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 
 	// Declare an instance of the application struct
 	app := &application{

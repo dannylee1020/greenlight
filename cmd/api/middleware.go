@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"expvar"
 	"fmt"
 	"net"
 	"net/http"
@@ -14,6 +15,29 @@ import (
 
 	"golang.org/x/time/rate"
 )
+
+func (app *application) metrics(next http.Handler) http.Handler {
+	var (
+		totalRequestsReceived = expvar.NewInt("total_requests_received")
+		totalResponsesSent    = expvar.NewInt("total_responses_sent")
+		totalProcessingTimeMs = expvar.NewInt("total_processing_time_ms")
+	)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		totalRequestsReceived.Add(1)
+
+		// call the next handler in the chain
+		next.ServeHTTP(w, r)
+
+		// on the way back up the chain, increment the response number by 1
+		totalResponsesSent.Add(1)
+
+		duration := time.Since(start).Microseconds()
+		totalProcessingTimeMs.Add(duration)
+	})
+}
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
