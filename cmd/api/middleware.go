@@ -4,7 +4,6 @@ import (
 	"errors"
 	"expvar"
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"greenlight.daniellee/internal/data"
 	"greenlight.daniellee/internal/validator"
 
+	"github.com/tomasen/realip"
 	"golang.org/x/time/rate"
 )
 
@@ -253,11 +253,8 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract client's ip address from request
 		if app.config.limiter.enabled {
-			ip, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				app.serverErrorResponse(w, r, err)
-				return
-			}
+			// retrieve client's real IP address
+			ip := realip.FromRequest(r)
 
 			mu.Lock()
 
