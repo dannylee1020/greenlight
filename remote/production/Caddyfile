@@ -1,0 +1,8 @@
+{
+	email dannylee1020@gmail.com
+}
+
+143.198.224.115 {
+	respond /v1/metrics "Not Permitted" 403
+    reverse_proxy localhost:4000
+}
